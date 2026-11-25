@@ -1,0 +1,6 @@
+{
+  "name": "Namaz Time",
+  "description": "Location-aware Islamic prayer timings with cloud-synced community schedule updates, Hayya 'alas-salah azan alerts even when locked, and live Jamaat countdowns.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

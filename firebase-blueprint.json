@@ -1,0 +1,202 @@
+{
+  "entities": {
+    "MasjidSchedule": {
+      "title": "MasjidSchedule",
+      "description": "Shared Islamic prayer schedule with optional Azan overrides, Jamaat offsets/overrides, and community announcement.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "Firebase UID of the user who owns/manages this Masjid schedule."
+        },
+        "masjidName": {
+          "type": "string",
+          "description": "Display name of the mosque or community board."
+        },
+        "cityLabel": {
+          "type": "string",
+          "description": "Optional city or neighborhood label."
+        },
+        "shareCode": {
+          "type": "string",
+          "description": "Short shareable code or ID for followers."
+        },
+        "publicBoard": {
+          "type": "boolean",
+          "description": "Whether any signed-in user can view and subscribe to this Masjid schedule."
+        },
+        "useAutoLocationForEmpty": {
+          "type": "boolean",
+          "description": "When true, empty Azan time fields fall back to device location astronomical calculation."
+        },
+        "fajrAzan": {
+          "type": "string",
+          "description": "HH:mm 24-hour Azan override for Fajr, or empty string for auto-location."
+        },
+        "dhuhrAzan": {
+          "type": "string",
+          "description": "HH:mm 24-hour Azan override for Dhuhr, or empty string for auto-location."
+        },
+        "asrAzan": {
+          "type": "string",
+          "description": "HH:mm 24-hour Azan override for Asr, or empty string for auto-location."
+        },
+        "maghribAzan": {
+          "type": "string",
+          "description": "HH:mm 24-hour Azan override for Maghrib, or empty string for auto-location."
+        },
+        "ishaAzan": {
+          "type": "string",
+          "description": "HH:mm 24-hour Azan override for Isha, or empty string for auto-location."
+        },
+        "fajrJamaatOffsetMin": {
+          "type": "integer",
+          "description": "Minutes after Fajr Azan until Jamaat (default 15)."
+        },
+        "dhuhrJamaatOffsetMin": {
+          "type": "integer",
+          "description": "Minutes after Dhuhr Azan until Jamaat (default 15)."
+        },
+        "asrJamaatOffsetMin": {
+          "type": "integer",
+          "description": "Minutes after Asr Azan until Jamaat (default 15)."
+        },
+        "maghribJamaatOffsetMin": {
+          "type": "integer",
+          "description": "Minutes after Maghrib Azan until Jamaat (default 5)."
+        },
+        "ishaJamaatOffsetMin": {
+          "type": "integer",
+          "description": "Minutes after Isha Azan until Jamaat (default 15)."
+        },
+        "fajrJamaatOverride": {
+          "type": "string",
+          "description": "Optional explicit HH:mm Jamaat time for Fajr."
+        },
+        "dhuhrJamaatOverride": {
+          "type": "string",
+          "description": "Optional explicit HH:mm Jamaat time for Dhuhr."
+        },
+        "asrJamaatOverride": {
+          "type": "string",
+          "description": "Optional explicit HH:mm Jamaat time for Asr."
+        },
+        "maghribJamaatOverride": {
+          "type": "string",
+          "description": "Optional explicit HH:mm Jamaat time for Maghrib."
+        },
+        "ishaJamaatOverride": {
+          "type": "string",
+          "description": "Optional explicit HH:mm Jamaat time for Isha."
+        },
+        "announcement": {
+          "type": "string",
+          "description": "Optional short community announcement (e.g. Jummah time)."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of creation (FieldValue.serverTimestamp())."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of last update (FieldValue.serverTimestamp())."
+        }
+      },
+      "required": [
+        "ownerId",
+        "masjidName",
+        "shareCode",
+        "publicBoard",
+        "useAutoLocationForEmpty",
+        "fajrAzan",
+        "dhuhrAzan",
+        "asrAzan",
+        "maghribAzan",
+        "ishaAzan",
+        "fajrJamaatOffsetMin",
+        "dhuhrJamaatOffsetMin",
+        "asrJamaatOffsetMin",
+        "maghribJamaatOffsetMin",
+        "ishaJamaatOffsetMin",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "UserPreferences": {
+      "title": "UserPreferences",
+      "description": "Per-user prayer calculation, subscribed Masjid board, and Azan alert settings.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase UID of the user."
+        },
+        "subscribedMasjidId": {
+          "type": "string",
+          "description": "Active Masjid document ID the user follows."
+        },
+        "calculationMethod": {
+          "type": "string",
+          "enum": ["ISNA", "MWL", "UMM_AL_QURA", "KARACHI", "EGYPT"],
+          "description": "Astronomical calculation convention."
+        },
+        "asrMethod": {
+          "type": "string",
+          "enum": ["STANDARD", "HANAFI"],
+          "description": "Asr shadow ratio convention."
+        },
+        "latitude": {
+          "type": "number",
+          "description": "Saved device latitude."
+        },
+        "longitude": {
+          "type": "number",
+          "description": "Saved device longitude."
+        },
+        "locationLabel": {
+          "type": "string",
+          "description": "Human-readable city or locality label."
+        },
+        "azanVoiceEnabled": {
+          "type": "boolean",
+          "description": "Whether to speak Hayya alas-salah on Azan."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of creation."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of last update."
+        }
+      },
+      "required": [
+        "userId",
+        "subscribedMasjidId",
+        "calculationMethod",
+        "asrMethod",
+        "azanVoiceEnabled",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/masjids/{masjidId}": {
+      "schema": {
+        "$ref": "#/entities/MasjidSchedule"
+      },
+      "description": "Shared Masjid schedules synced in real time to subscribers."
+    },
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/UserPreferences"
+      },
+      "description": "User-private preferences and saved location settings."
+    }
+  }
+}

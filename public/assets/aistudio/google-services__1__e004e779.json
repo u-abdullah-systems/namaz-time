@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "594278675940",
+    "firebase_url": "https://namaz-time-dc702-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "namaz-time-dc702",
+    "storage_bucket": "namaz-time-dc702.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:594278675940:android:b16e193ee047af804103f1",
+        "android_client_info": {
+          "package_name": "com.aistudio.namaztime.qzmkpv"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA-_TV-Ze9lzCUqaoF_m-g-rwi9wF9RtSo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
