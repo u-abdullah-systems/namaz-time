@@ -135,6 +135,7 @@ object AstronomicalPrayerCalculator {
 }
 
 object PrayerScheduleResolver {
+    private val HM_REGEX = Regex("^([01]?[0-9]|2[0-3]):([0-5][0-9])$")
     private val displayTimeFormatter = ThreadLocal.withInitial {
         SimpleDateFormat("h:mm a", Locale.getDefault())
     }
@@ -212,12 +213,14 @@ object PrayerScheduleResolver {
         todayTimings: List<ResolvedPrayerTiming>,
         tomorrowTimings: List<ResolvedPrayerTiming>
     ): PrayerHeroState? {
-        val sortedToday = todayTimings.sortedBy { it.azanEpochMillis }
-        val sortedAll = (todayTimings + tomorrowTimings).sortedBy { it.azanEpochMillis }
-
         // 1. Check if Azan has started and we are currently counting down to Jamaat!
-        val activeJamaat = sortedToday.firstOrNull {
-            nowMillis >= it.azanEpochMillis && nowMillis < it.jamaatEpochMillis
+        var activeJamaat: ResolvedPrayerTiming? = null
+        for (timing in todayTimings) {
+            if (nowMillis >= timing.azanEpochMillis && nowMillis < timing.jamaatEpochMillis) {
+                if (activeJamaat == null || timing.azanEpochMillis < activeJamaat.azanEpochMillis) {
+                    activeJamaat = timing
+                }
+            }
         }
         if (activeJamaat != null) {
             val total = (activeJamaat.jamaatEpochMillis - activeJamaat.azanEpochMillis).coerceAtLeast(1L)
@@ -233,9 +236,23 @@ object PrayerScheduleResolver {
             )
         }
 
-        // 2. Otherwise find the next upcoming Azan today or tomorrow in chronological order
-        val nextPrayer = sortedAll.firstOrNull { it.azanEpochMillis > nowMillis }
-            ?: return null
+        // 2. Otherwise find the earliest upcoming Azan today or tomorrow
+        var nextPrayer: ResolvedPrayerTiming? = null
+        for (timing in todayTimings) {
+            if (timing.azanEpochMillis > nowMillis &&
+                (nextPrayer == null || timing.azanEpochMillis < nextPrayer.azanEpochMillis)
+            ) {
+                nextPrayer = timing
+            }
+        }
+        for (timing in tomorrowTimings) {
+            if (timing.azanEpochMillis > nowMillis &&
+                (nextPrayer == null || timing.azanEpochMillis < nextPrayer.azanEpochMillis)
+            ) {
+                nextPrayer = timing
+            }
+        }
+        if (nextPrayer == null) return null
 
         return PrayerHeroState.NextAzanCountdown(
             prayer = nextPrayer.prayer,
@@ -252,16 +269,23 @@ object PrayerScheduleResolver {
         val hours = totalSeconds / 3600L
         val minutes = (totalSeconds % 3600L) / 60L
         val seconds = totalSeconds % 60L
-        return if (hours > 0) {
-            String.format(Locale.US, "%02d:%02d:%02d", hours, minutes, seconds)
-        } else {
-            String.format(Locale.US, "%02d:%02d", minutes, seconds)
+        return buildString(8) {
+            if (hours > 0L) {
+                if (hours < 10L) append('0')
+                append(hours)
+                append(':')
+            }
+            if (minutes < 10L) append('0')
+            append(minutes)
+            append(':')
+            if (seconds < 10L) append('0')
+            append(seconds)
         }
     }
 
     fun parseHm(hm: String): Pair<Int, Int>? {
         if (hm.isBlank()) return null
-        val match = Regex("^([01]?[0-9]|2[0-3]):([0-5][0-9])$").matchEntire(hm.trim()) ?: return null
+        val match = HM_REGEX.matchEntire(hm.trim()) ?: return null
         val h = match.groupValues[1].toIntOrNull() ?: return null
         val m = match.groupValues[2].toIntOrNull() ?: return null
         return h to m

@@ -31,11 +31,23 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.Locale
+import java.util.TimeZone
+
+private data class ResolvedDayBundle(
+    val cache: CachedAlarmSnapshot,
+    val masjid: MasjidSchedule,
+    val prefs: UserPreferences,
+    val todayTimings: List<ResolvedPrayerTiming>,
+    val tomorrowTimings: List<ResolvedPrayerTiming>
+)
 
 data class NamazDashboardData(
     val activeMasjid: MasjidSchedule,
@@ -95,23 +107,18 @@ class MainViewModel(
         }
     }
 
-    val dashboardState: StateFlow<NamazDashboardData?> = combine(
-        localCache.snapshotFlow,
-        tickerFlow,
-        AzanAlertState.activePrayer,
-        _isRefreshingLocation,
-        _statusBanner,
-        _demoJamaatEndMillis,
-        _demoPrayer
-    ) { values ->
-        val cache = values[0] as CachedAlarmSnapshot
-        val nowMillis = values[1] as Long
-        val activeAzan = values[2] as PrayerName?
-        val refreshingLoc = values[3] as Boolean
-        val banner = values[4] as String?
-        val demoEnd = values[5] as Long?
-        val demoPrayer = values[6] as PrayerName
+    private val dayStampFlow = tickerFlow
+        .map { nowMillis ->
+            val cal = Calendar.getInstance().apply { timeInMillis = nowMillis }
+            val key = (cal.get(Calendar.YEAR) * 1000) + cal.get(Calendar.DAY_OF_YEAR)
+            "${key}_${TimeZone.getDefault().id}"
+        }
+        .distinctUntilChanged()
 
+    private val resolvedBundleFlow = combine(
+        localCache.snapshotFlow,
+        dayStampFlow
+    ) { cache, _ ->
         val masjid = cache.cachedMasjidSchedule ?: MasjidSchedule()
         val prefs = UserPreferences(
             calculationMethod = cache.calculationMethod.name,
@@ -121,8 +128,7 @@ class MainViewModel(
             locationLabel = cache.locationLabel,
             azanVoiceEnabled = cache.azanVoiceEnabled
         )
-
-        val todayCal = Calendar.getInstance().apply { timeInMillis = nowMillis }
+        val todayCal = Calendar.getInstance()
         val tomorrowCal = (todayCal.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, 1) }
 
         val todayTimings = PrayerScheduleResolver.resolveForDay(
@@ -142,6 +148,35 @@ class MainViewModel(
             masjidSchedule = masjid
         )
 
+        ResolvedDayBundle(
+            cache = cache,
+            masjid = masjid,
+            prefs = prefs,
+            todayTimings = todayTimings,
+            tomorrowTimings = tomorrowTimings
+        )
+    }.flowOn(Dispatchers.Default)
+
+    val dashboardState: StateFlow<NamazDashboardData?> = combine(
+        resolvedBundleFlow,
+        tickerFlow,
+        AzanAlertState.activePrayer,
+        _isRefreshingLocation,
+        _statusBanner,
+        _demoJamaatEndMillis,
+        _demoPrayer
+    ) { values ->
+        val bundle = values[0] as ResolvedDayBundle
+        val nowMillis = values[1] as Long
+        val activeAzan = values[2] as PrayerName?
+        val refreshingLoc = values[3] as Boolean
+        val banner = values[4] as String?
+        val demoEnd = values[5] as Long?
+        val demoPrayer = values[6] as PrayerName
+
+        val cache = bundle.cache
+        val masjid = bundle.masjid
+
         val isDemoActive = demoEnd != null && nowMillis < demoEnd
         val heroState = if (isDemoActive && demoEnd != null) {
             val totalMillis = masjid.jamaatOffsetFor(demoPrayer).coerceAtLeast(1) * 60_000L
@@ -156,7 +191,11 @@ class MainViewModel(
                 jamaatFormatted = "Live Preview"
             )
         } else {
-            PrayerScheduleResolver.computeHeroState(nowMillis, todayTimings, tomorrowTimings)
+            PrayerScheduleResolver.computeHeroState(
+                nowMillis = nowMillis,
+                todayTimings = bundle.todayTimings,
+                tomorrowTimings = bundle.tomorrowTimings
+            )
         }
 
         // Instant in-app trigger at exact Azan time (0s delay when app is visible)
@@ -177,8 +216,8 @@ class MainViewModel(
 
         NamazDashboardData(
             activeMasjid = masjid,
-            preferences = prefs,
-            todayTimings = todayTimings,
+            preferences = bundle.prefs,
+            todayTimings = bundle.todayTimings,
             heroState = heroState,
             enabledPrayers = cache.enabledPrayers,
             activeAzanPlaying = activeAzan,

@@ -346,6 +346,41 @@ fun TodayScreen(
 }
 
 @Composable
+private fun HeroCardBackground(
+    isJamaatActive: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val overlayBrush = remember(isJamaatActive) {
+        Brush.verticalGradient(
+            if (isJamaatActive) {
+                listOf(
+                    Color(0xFF1F1604).copy(alpha = 0.72f),
+                    Color(0xFF0A2E29).copy(alpha = 0.94f)
+                )
+            } else {
+                listOf(
+                    Color(0xFF062521).copy(alpha = 0.65f),
+                    Color(0xFF062521).copy(alpha = 0.92f)
+                )
+            }
+        )
+    }
+    Box(modifier = modifier) {
+        Image(
+            painter = painterResource(id = R.drawable.img_mosque_hero),
+            contentDescription = "Mosque arch header illustration",
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.matchParentSize()
+        )
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .background(overlayBrush)
+        )
+    }
+}
+
+@Composable
 private fun HeroPrayerCountdownCard(
     heroState: PrayerHeroState?,
     activeAzanPlaying: PrayerName?,
@@ -355,6 +390,9 @@ private fun HeroPrayerCountdownCard(
 ) {
     val isJamaatActive = heroState is PrayerHeroState.JamaatCountdown
     val isAlertRinging = activeAzanPlaying != null || isSimulatingJamaat
+    val timerStyle = MaterialTheme.typography.displayLarge.let { base ->
+        remember(base) { base.copy(fontFeatureSettings = "tnum") }
+    }
 
     Card(
         shape = MaterialTheme.shapes.large,
@@ -363,31 +401,9 @@ private fun HeroPrayerCountdownCard(
         modifier = Modifier.fillMaxWidth()
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {
-            Image(
-                painter = painterResource(id = R.drawable.img_mosque_hero),
-                contentDescription = "Mosque arch header illustration",
-                contentScale = ContentScale.Crop,
+            HeroCardBackground(
+                isJamaatActive = isJamaatActive,
                 modifier = Modifier.matchParentSize()
-            )
-
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .background(
-                        Brush.verticalGradient(
-                            if (isJamaatActive) {
-                                listOf(
-                                    Color(0xFF1F1604).copy(alpha = 0.72f),
-                                    Color(0xFF0A2E29).copy(alpha = 0.94f)
-                                )
-                            } else {
-                                listOf(
-                                    Color(0xFF062521).copy(alpha = 0.65f),
-                                    Color(0xFF062521).copy(alpha = 0.92f)
-                                )
-                            }
-                        )
-                    )
             )
 
             Column(
@@ -435,7 +451,7 @@ private fun HeroPrayerCountdownCard(
 
                         Text(
                             text = PrayerScheduleResolver.formatDuration(heroState.remainingMillis),
-                            style = MaterialTheme.typography.displayLarge,
+                            style = timerStyle,
                             color = Color.White,
                             modifier = Modifier.testTag("hero_countdown_timer")
                         )
@@ -489,7 +505,7 @@ private fun HeroPrayerCountdownCard(
                         )
                         Text(
                             text = PrayerScheduleResolver.formatDuration(heroState.remainingMillis),
-                            style = MaterialTheme.typography.displayLarge,
+                            style = timerStyle,
                             color = Color.White,
                             modifier = Modifier.testTag("hero_countdown_timer")
                         )
